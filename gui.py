@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog, QLabel, QTextEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog, QLabel, QTextEdit, QMessageBox
 from PyQt5.QtCore import QProcess
 
 
@@ -42,24 +42,35 @@ class MeetingSummarizer(QMainWindow):
         output_filename, _ = QFileDialog.getSaveFileName(self, "Save Meeting Recording", filter="MP3 Files (*.mp3)")
         if not output_filename:
             return
+        if not output_filename.endswith(".mp3"):
+            output_filename += ".mp3"
         self.output_filename = output_filename
         self.process.start("python", ["cli.py", "record", self.output_filename])
 
     def stop_recording(self):
         self.process.terminate()
-        self.process.waitForFinished()
+        self.process.waitForFinished(-1)  # Wait indefinitely for the process to finish
         self.process.start("python", ["cli.py", "summarize", self.output_filename])
 
     def handle_stdout(self):
         data = self.process.readAllStandardOutput().data().decode()
-        if data.startswith("TRANSCRIPT:"):
-            self.transcript_edit.setPlainText(data[len("TRANSCRIPT:"):].strip())
-        elif data.startswith("SUMMARY:"):
-            self.summary_edit.setPlainText(data[len("SUMMARY:"):].strip())
+        lines = data.strip().splitlines()
+
+        for line in lines:
+            print(line)  # Print stdout to console
+
+            if line.startswith("TRANSCRIPT:"):
+                transcript = line[len("TRANSCRIPT:"):].strip()
+                current_transcript = self.transcript_edit.toPlainText()
+                self.transcript_edit.setPlainText(current_transcript + transcript)
+            elif line.startswith("SUMMARY:"):
+                summary = line[len("SUMMARY:"):].strip()
+                current_summary = self.summary_edit.toPlainText()
+                self.summary_edit.setPlainText(current_summary + summary)
 
     def handle_stderr(self):
         data = self.process.readAllStandardError().data().decode()
-        print(f"Error: {data.strip()}")
+        print(f"StdErr: {data.strip()}")  # Print stderr to console
 
     def process_finished(self):
         print("Process finished")

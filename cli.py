@@ -1,9 +1,11 @@
 import os
-import platform
-import subprocess
 import sys
 import time
+import threading
+import signal
+import subprocess
 
+import ffmpeg
 import openai
 import tiktoken
 import torch
@@ -25,24 +27,61 @@ class _CustomProgressBar(tqdm.tqdm):
 
         print("Audio Transcribe Progress: " + str(round(self._current / self.total * 100)) + "%")
 
+# transcribe_module = sys.modules['whisper.transcribe']
+# transcribe_module.tqdm.tqdm = _CustomProgressBar
 
-transcribe_module = sys.modules['whisper.transcribe']
-transcribe_module.tqdm.tqdm = _CustomProgressBar
+
+stop_ticker = False
 
 
-def record_meeting(filename):
-    input_format = "dshow" if platform.system() == "Windows" else "avfoundation"
-    input_device = "audio=Microphone" if platform.system() == "Windows" else ":0"
+def display_ticker():
+    start_time = time.time()
+    while not stop_ticker:
+        elapsed_time = time.time() - start_time
+        minutes, seconds = divmod(int(elapsed_time), 60)
+        sys.stdout.write(f'\rRecording: {minutes:02d}:{seconds:02d}')
+        sys.stdout.flush()
+        time.sleep(1)
 
-    command = ["ffmpeg", "-f", input_format, "-i", input_device, "-vn", "-acodec", "libmp3lame", filename]
+
+def record_meeting(output_filename):
     try:
-        process = subprocess.Popen(command)
-        process.communicate()
-    except KeyboardInterrupt:
-        process.terminate()
-        print("\nRecording stopped by user.")
-        sys.exit(0)
 
+        global stop_ticker
+        # Start the moving ticker
+        stop_ticker = False
+        ticker_thread = threading.Thread(target=display_ticker)
+        ticker_thread.start()
+
+        # The command to record audio using FFmpeg on macOS
+        stream = (
+            ffmpeg
+            .input(":0", f="avfoundation", video_size=None)  # Use 'default'
+            .output(output_filename, acodec="libmp3lame", format="mp3")  # Specify the output format as 'mp3'
+            .overwrite_output()
+        )
+
+        # Start the FFmpeg process
+        print("Starting recording...")
+        process = ffmpeg.run_async(stream, pipe_stdin=True, pipe_stderr=True)
+
+        # Wait for the process to finish or be interrupted
+        process.wait()
+
+    except KeyboardInterrupt:
+        print("Stopping recording...")
+        stop_ticker = True
+        ticker_thread.join()
+
+        try:
+            process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            process.wait()
+
+        print("Recording stopped.")
+    except Exception as e:
+        print(e)
 
 def transcribe_audio(filename):
 
@@ -109,8 +148,8 @@ if __name__ == "__main__":
     elif action == "summarize":
         transcript = transcribe_audio(output_filename)
         summary = summarize_transcript(transcript)
-        print("TRANSCRIPT:\n" + transcript)
-        print("SUMMARY:\n" + summary)
+        print(f"TRANSCRIPT:{transcript}\n")
+        print(f"SUMMARY:{summary}\n")
     else:
         print(f"Invalid action. Usage: python {sys.argv[0]} [record|summarize] output.mp3")
         sys.exit(1)

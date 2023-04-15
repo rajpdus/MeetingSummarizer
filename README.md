@@ -1,7 +1,14 @@
 # MeetingSummarizer
 
 Effortlessly record, transcribe, and summarize meetings with this user-friendly desktop utility powered by OpenAI's Whisper and GPT-3.5-turbo.
+This has been tested to work well on Macbooks with Apple Silicon
 
+
+## Prerequisites
+
+- Python 3.10: Download and install the latest version of Python from the [official website](https://www.python.org/downloads/) or use your package manager.
+- FFmpeg: Install FFmpeg using a package manager. For macOS, you can use [Homebrew](https://brew.sh/):
+- PyQt5: Install PyQt5 using brew as above. Add the site-packages to your PYTHONPATH
 ## Whisper ASR
 
 Whisper is an Automatic Speech Recognition (ASR) system developed by OpenAI. It converts spoken language into written text and is trained on a large amount of multilingual and multitask supervised data collected from the web.

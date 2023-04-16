@@ -150,9 +150,7 @@ if __name__ == "__main__":
     if action == "record":
         record_meeting(output_filename)
     elif action == "summarize":
-        # transcript = transcribe_audio(output_filename)
-        with open("transcript.txt", "r") as file:
-            transcript = file.read()
+        transcript = transcribe_audio(output_filename)
         summary = summarize_transcript(transcript)
         print(f"TRANSCRIPT:{transcript}\n")
         print(f"SUMMARY_START:\n{summary}\nSUMMARY_END\n")

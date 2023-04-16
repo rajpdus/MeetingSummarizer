@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog, QLabel, QTextEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog, QLabel, QTextEdit, QHBoxLayout
 from PyQt5.QtCore import QProcess
 
 
@@ -13,13 +13,16 @@ class MeetingSummarizer(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
+        self.button_layout = QHBoxLayout()
+        layout.addLayout(self.button_layout)
+
         self.start_button = QPushButton("Start Recording")
         self.start_button.clicked.connect(self.start_recording)
-        layout.addWidget(self.start_button)
+        self.button_layout.addWidget(self.start_button)
 
         self.stop_button = QPushButton("Stop Recording")
         self.stop_button.clicked.connect(self.stop_recording)
-        layout.addWidget(self.stop_button)
+        self.button_layout.addWidget(self.stop_button)
 
         self.summarize_button = QPushButton("Summarize")
         self.summarize_button.clicked.connect(self.summarize_recording)

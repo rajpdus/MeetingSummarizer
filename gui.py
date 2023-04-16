@@ -17,9 +17,13 @@ class MeetingSummarizer(QMainWindow):
         self.start_button.clicked.connect(self.start_recording)
         layout.addWidget(self.start_button)
 
-        self.stop_button = QPushButton("Stop Recording and Summarize")
+        self.stop_button = QPushButton("Stop Recording")
         self.stop_button.clicked.connect(self.stop_recording)
         layout.addWidget(self.stop_button)
+
+        self.summarize_button = QPushButton("Summarize")
+        self.summarize_button.clicked.connect(self.summarize_recording)
+        layout.addWidget(self.summarize_button)
 
         self.transcript_label = QLabel("Transcript:")
         layout.addWidget(self.transcript_label)
@@ -50,7 +54,12 @@ class MeetingSummarizer(QMainWindow):
     def stop_recording(self):
         self.process.terminate()
         self.process.waitForFinished(-1)  # Wait indefinitely for the process to finish
-        self.process.start("python", ["cli.py", "summarize", self.output_filename])
+
+    def summarize_recording(self):
+        audio_filename, _ = QFileDialog.getOpenFileName(self, "Select Audio File", filter="MP3 Files (*.mp3)")
+        if not audio_filename:
+            return
+        self.process.start("python", ["cli.py", "summarize", audio_filename])
 
     def handle_stdout(self):
         data = self.process.readAllStandardOutput().data().decode()

@@ -11,26 +11,9 @@ import tiktoken
 import torch
 import whisper
 from dotenv import load_dotenv
-import tqdm
 
 whisper_model = "base"
 command_prompt = "Create clear and concise unlabelled bullet points summarizing key information"
-
-
-class _CustomProgressBar(tqdm.tqdm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._current = self.n
-
-    def update(self, n):
-        super().update(n)
-        self._current += n
-
-        print("Audio Transcribe Progress: " + str(round(self._current / self.total * 100)) + "%")
-
-# transcribe_module = sys.modules['whisper.transcribe']
-# transcribe_module.tqdm.tqdm = _CustomProgressBar
-
 
 stop_ticker = False
 

@@ -8,6 +8,7 @@ class MeetingSummarizer(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Meeting Summarizer")
+        self.setFixedSize(700, 450)  # Set fixed window size to 800x450 pixels
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)

@@ -1,4 +1,4 @@
-import sys
+import sys, os, signal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog, QLabel, QTextEdit, QHBoxLayout
 from PyQt5.QtCore import QProcess
 
@@ -56,7 +56,7 @@ class MeetingSummarizer(QMainWindow):
         self.process.start("python", ["cli.py", "record", self.output_filename])
 
     def stop_recording(self):
-        self.process.kill()
+        os.kill(self.process.processId(), signal.SIGINT)
         self.process.waitForFinished(-1)  # Wait indefinitely for the process to finish
 
     def summarize_recording(self):

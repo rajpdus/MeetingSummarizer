@@ -47,12 +47,11 @@ def record_meeting(output_filename):
         )
 
         # Start the FFmpeg process
-        print("Starting recording...")
         process = ffmpeg.run_async(stream, pipe_stdin=True, pipe_stderr=True)
 
         # Wait for the process to finish or be interrupted
-        process.communicate()
-        print("Stopping recording...")
+        while process.poll() is None:
+            time.sleep(1)
 
     except KeyboardInterrupt:
 
@@ -68,6 +67,7 @@ def record_meeting(output_filename):
         print("Recording stopped.")
     except Exception as e:
         print(e)
+
 
 def transcribe_audio(filename):
 

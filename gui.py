@@ -56,7 +56,7 @@ class MeetingSummarizer(QMainWindow):
         self.process.start("python", ["cli.py", "record", self.output_filename])
 
     def stop_recording(self):
-        self.process.terminate()
+        self.process.kill()
         self.process.waitForFinished(-1)  # Wait indefinitely for the process to finish
 
     def summarize_recording(self):
@@ -69,6 +69,9 @@ class MeetingSummarizer(QMainWindow):
         data = self.process.readAllStandardOutput().data().decode()
         lines = data.strip().splitlines()
 
+        summary_flag = False
+        summary_lines = []
+
         for line in lines:
             print(line)  # Print stdout to console
 
@@ -76,10 +79,16 @@ class MeetingSummarizer(QMainWindow):
                 transcript = line[len("TRANSCRIPT:"):].strip()
                 current_transcript = self.transcript_edit.toPlainText()
                 self.transcript_edit.setPlainText(current_transcript + transcript)
-            elif line.startswith("SUMMARY:"):
-                summary = line[len("SUMMARY:"):].strip()
+            elif line.startswith("SUMMARY_START"):
+                summary_flag = True
+            elif line.startswith("SUMMARY_END"):
+                summary_flag = False
+                summary = "\n".join(summary_lines)
                 current_summary = self.summary_edit.toPlainText()
                 self.summary_edit.setPlainText(current_summary + summary)
+                summary_lines = []  # Clear summary_lines for next summary
+            elif summary_flag:
+                summary_lines.append(line)
 
     def handle_stderr(self):
         data = self.process.readAllStandardError().data().decode()

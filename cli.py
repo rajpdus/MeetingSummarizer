@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import tqdm
 
 whisper_model = "base"
+command_prompt = "Create clear and concise unlabelled bullet points summarizing key information"
 
 
 class _CustomProgressBar(tqdm.tqdm):
@@ -48,6 +49,7 @@ def record_meeting(output_filename):
     try:
 
         global stop_ticker
+
         # Start the moving ticker
         stop_ticker = False
         ticker_thread = threading.Thread(target=display_ticker)
@@ -66,17 +68,18 @@ def record_meeting(output_filename):
         process = ffmpeg.run_async(stream, pipe_stdin=True, pipe_stderr=True)
 
         # Wait for the process to finish or be interrupted
-        process.wait()
+        process.communicate()
+        print("Stopping recording...")
 
     except KeyboardInterrupt:
-        print("Stopping recording...")
+
         stop_ticker = True
         ticker_thread.join()
 
         try:
-            process.wait(timeout=30)
+            process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            process.terminate()
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
             process.wait()
 
         print("Recording stopped.")
@@ -105,8 +108,8 @@ def summarize_transcript(transcript):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that summarizes text."},
-                {"role": "user", "content": f"Please summarize the following text: {prompt}"}
+                {"role": "system", "content": "You are a helpful assistant that summarizes text to small paragraphs"},
+                {"role": "user", "content": f"{command_prompt}: {prompt}"}
             ],
             temperature=0.5,
         )
@@ -118,12 +121,13 @@ def summarize_transcript(transcript):
     tokenizer = tiktoken.get_encoding("cl100k_base")
     tokens = tokenizer.encode(text)
     while tokens:
-        chunk_tokens = tokens[:1000]
+        chunk_tokens = tokens[:2000]
         chunk_text = tokenizer.decode(chunk_tokens)
         chunks.append(chunk_text)
-        tokens = tokens[1000:]
+        tokens = tokens[2000:]
 
-    summary = "\n\n".join([generate_summary(chunk) for chunk in chunks])
+    summary = "\n".join([generate_summary(chunk) for chunk in chunks])
+
     return summary
 
 
@@ -146,10 +150,12 @@ if __name__ == "__main__":
     if action == "record":
         record_meeting(output_filename)
     elif action == "summarize":
-        transcript = transcribe_audio(output_filename)
+        # transcript = transcribe_audio(output_filename)
+        with open("transcript.txt", "r") as file:
+            transcript = file.read()
         summary = summarize_transcript(transcript)
         print(f"TRANSCRIPT:{transcript}\n")
-        print(f"SUMMARY:{summary}\n")
+        print(f"SUMMARY_START:\n{summary}\nSUMMARY_END\n")
     else:
         print(f"Invalid action. Usage: python {sys.argv[0]} [record|summarize] output.mp3")
         sys.exit(1)

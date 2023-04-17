@@ -80,7 +80,7 @@ def transcribe_audio(filename):
 
     print("Beginning Transcribing Process...")
 
-    result = model.transcribe(audio, verbose=False, fp16=False)
+    result = model.transcribe(audio, verbose=False, fp16=False, task="translate")
 
     return result['text']
 
